@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realtor Post Studio</title>
+<style>
+  :root {
+    --bg: #f6f4f0; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e4e1db; --accent: #1f3a5f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 20px 24px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .wrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 80px); }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 20px; overflow-y: auto; }
+  aside h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; }
+  aside h2:first-child { margin-top: 0; }
+  label { display: block; font-size: 13px; margin: 8px 0 3px; color: var(--muted); }
+  input[type=text], select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; }
+  .row { display: flex; gap: 8px; }
+  .row > div { flex: 1; }
+  input[type=color] { width: 100%; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: #fff; }
+  .themes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .themes button { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+  .btn { display: inline-block; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  main { padding: 20px 24px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .card canvas { width: 100%; height: auto; display: block; background: #ddd; }
+  .card .meta { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .card .meta strong { font-size: 13px; }
+  .card .meta span { font-size: 12px; color: var(--muted); }
+  .card .actions { display: flex; gap: 6px; padding: 0 12px 12px; }
+  .card .actions button { flex: 1; padding: 7px; font-size: 12px; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1d1d1f; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 820px) { .wrap { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Realtor Post Studio</h1>
+    <p>30 days of branded Instagram, Facebook &amp; TikTok-cover posts. Type your details once, then download everything.</p>
+  </div>
+  <div class="toolbar" style="margin:0">
+    <button class="btn" id="dlAll">Download all 30 (PNG)</button>
+    <button class="btn ghost" id="dlCaptions">Download captions (.txt)</button>
+  </div>
+</header>
+<div class="wrap">
+  <aside>
+    <h2>Your details</h2>
+    <label>Agent name</label><input type="text" id="agentName" value="Jordan Avery">
+    <label>Brokerage</label><input type="text" id="brokerage" value="Avery Home Group">
+    <div class="row">
+      <div><label>Phone</label><input type="text" id="phone" value="(555) 123-4567"></div>
+      <div><label>Instagram / TikTok</label><input type="text" id="handle" value="@averyhomes"></div>
+    </div>
+    <label>City / market</label><input type="text" id="city" value="Austin">
+    <label>License line (optional)</label><input type="text" id="license" value="">
+
+    <h2>Brand</h2>
+    <div class="themes" id="themes"></div>
+    <div class="row">
+      <div><label>Primary</label><input type="color" id="c1" value="#1f3a5f"></div>
+      <div><label>Accent</label><input type="color" id="c2" value="#c9a227"></div>
+      <div><label>Background</label><input type="color" id="c3" value="#f6f1e9"></div>
+    </div>
+    <label>Headline style</label>
+    <select id="fontPair">
+      <option value="serif">Classic serif (luxury)</option>
+      <option value="sans">Modern sans (clean)</option>
+    </select>
+
+    <h2>Photos</h2>
+    <label>Headshot</label><input type="file" id="headshot" accept="image/*">
+    <label>Listing / lifestyle photo</label><input type="file" id="listing" accept="image/*">
+    <p class="hint">Photos never leave your computer. Without a photo, a tasteful brand-color background is used.</p>
+
+    <h2>Listing details (for listing posts)</h2>
+    <label>Address</label><input type="text" id="address" value="1428 Maple Ridge Dr">
+    <div class="row">
+      <div><label>Price</label><input type="text" id="price" value="$649,000"></div>
+      <div><label>Open house</label><input type="text" id="openHouse" value="Sat 1–4 PM"></div>
+    </div>
+    <div class="row">
+      <div><label>Beds</label><input type="text" id="beds" value="4"></div>
+      <div><label>Baths</label><input type="text" id="baths" value="3"></div>
+      <div><label>Sq ft</label><input type="text" id="sqft" value="2,450"></div>
+    </div>
+
+    <h2>Market numbers (for market update)</h2>
+    <div class="row">
+      <div><label>Median price</label><input type="text" id="mMedian" value="$512K"></div>
+      <div><label>Days on market</label><input type="text" id="mDays" value="34"></div>
+    </div>
+    <div class="row">
+      <div><label>Active listings</label><input type="text" id="mActive" value="2,140"></div>
+      <div><label>Month</label><input type="text" id="mMonth" value="October"></div>
+    </div>
+    <p class="hint">Use your MLS numbers. Settings are saved in this browser.</p>
+  </aside>
+  <main>
+    <div class="toolbar">
+      <label style="margin:0">Format</label>
+      <select id="format" style="width:auto">
+        <option value="portrait">Instagram portrait 1080×1350</option>
+        <option value="square">Square 1080×1080</option>
+        <option value="story">Story / Reel / TikTok cover 1080×1920</option>
+      </select>
+      <span class="hint">Click “Caption” to copy the matching ready-to-post caption.</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- Content: 30 days ----------
+const POSTS = [
+  { day: 1, layout: "agent", title: "Meet your agent", kicker: "HELLO, NEIGHBOR",
+    head: "Your {city} real estate guide", body: "Buying, selling, or just curious what your home is worth? I'm here to make it simple.",
+    caption: "Hi, I'm {name} 👋 I help families in {city} buy and sell with less stress and more confidence. Whether you're 6 months out or ready now, my DMs are open. Save this so you know who to call. 🏡" },
+  { day: 2, layout: "tip", title: "Buyer tip: pre-approval", kicker: "BUYER TIP",
+    head: "Get pre-approved before you tour", list: ["Know your real budget", "Sellers take you seriously", "Move fast on the right home"],
+    caption: "Touring homes before you're pre-approved is like shopping without knowing your bank balance. 🔑 Pre-approval = real budget, stronger offers, faster closings. Want my list of trusted local lenders? Comment LENDER and I'll send it." },
+  { day: 3, layout: "photo", badge: "JUST LISTED", title: "Just listed",
+    caption: "✨ JUST LISTED ✨ {address} — {beds} bd | {baths} ba | {sqft} sq ft. Listed at {price}. This one won't last in {city}. DM me for a private showing or the full photo tour!" },
+  { day: 4, layout: "myth", title: "Myth vs fact: 20% down", head: "Myth vs. Fact",
+    myth: "You need 20% down to buy a home.", fact: "Many loan programs allow 3–5% down, and some even less.",
+    caption: "Let's bust this one. 🚫 You do NOT always need 20% down. Plenty of buyers in {city} get in with 3–5% (or less with the right program). Ask your lender — or ask me who to call. Share this with someone who's been waiting." },
+  { day: 5, layout: "bold", title: "Engagement: dream feature", kicker: "YOUR TURN",
+    head: "Pool, big kitchen, or huge backyard?", body: "You can only pick one. Tell me in the comments.",
+    caption: "Okay {city}, be honest… if you could only pick ONE: pool 🏊, chef's kitchen 🍳, or a huge backyard 🌳? Drop it in the comments!" },
+  { day: 6, layout: "stat", title: "Market update", kicker: "MARKET UPDATE",
+    caption: "📊 {month} {city} market snapshot: median price {median}, average {days} days on market, {active} active listings. What does this mean for YOU? Buyers have more choices; sellers need smart pricing. DM me MARKET for your neighborhood's numbers." },
+  { day: 7, layout: "quote", title: "Client testimonial",
+    quote: "We were nervous first-time buyers. {name} explained every step and we got our dream home under budget.", who: "The Martinez Family",
+    caption: "Nothing makes my week like this. 🥹 Thank you for trusting me with such a huge milestone! If you're a first-time buyer in {city}, you don't have to figure it out alone." },
+  { day: 8, layout: "tip", title: "Seller tip: first impressions", kicker: "SELLER TIP",
+    head: "3 quick wins before you list", list: ["Paint the front door", "Swap old light fixtures", "Deep clean + declutter"],
+    caption: "Selling soon? 🏠 You don't need a full remodel. These three low-cost updates make buyers fall in love online AND in person. Want my full pre-listing checklist? Comment CHECKLIST." },
+  { day: 9, layout: "bold", title: "Home value CTA", kicker: "FREE · NO PRESSURE",
+    head: "What's your home worth today?", body: "Get a custom valuation from a local expert, not an algorithm.",
+    caption: "Online estimates can be off by tens of thousands. 😬 I'll send you a real, local home value report for free — no pressure, no obligation. DM me VALUE or tap the link in my bio." },
+  { day: 10, layout: "photo", badge: "OPEN HOUSE", title: "Open house",
+    caption: "🚪 OPEN HOUSE {openhouse} at {address}! {beds} bd | {baths} ba | {sqft} sq ft, listed at {price}. Come say hi, grab a cookie, and see it in person. Tag someone who's house hunting!" },
+  { day: 11, layout: "tip", title: "First-time buyer costs", kicker: "FIRST-TIME BUYERS",
+    head: "Costs nobody warns you about", list: ["Inspection & appraisal", "Closing costs (2–5%)", "Moving + first repairs"],
+    caption: "Budgeting for a home is more than the down payment. 💸 Plan for inspection, appraisal, closing costs and move-in expenses so there are zero surprises. Save this for later!" },
+  { day: 12, layout: "myth", title: "Myth vs fact: spring only", head: "Myth vs. Fact",
+    myth: "Spring is the only good time to sell.", fact: "Serious buyers shop year-round, and there's less competition in the off-season.",
+    caption: "Think you have to wait for spring? 🌷 Off-season buyers are often MORE serious, and you'll face fewer competing listings. Let's look at your timing together. DM me TIMING." },
+  { day: 13, layout: "bold", title: "Neighborhood spotlight", kicker: "LOCAL LOVE",
+    head: "My favorite coffee spot in {city}", body: "Supporting local is part of the job. Where should I go next?",
+    caption: "☕ Local spotlight! Part of knowing a market is knowing the neighborhoods: the coffee, the parks, the Friday night spots. Drop your favorite local business below and I'll feature it!" },
+  { day: 14, layout: "photo", badge: "UNDER CONTRACT", title: "Under contract",
+    caption: "🎉 UNDER CONTRACT! {address} is officially spoken for. Proud of this team effort. Thinking about selling? Let's talk about what your home could do in today's market." },
+  { day: 15, layout: "tip", title: "Offer-winning tips", kicker: "BUYER TIP",
+    head: "How to win in a multiple-offer situation", list: ["Lead with a strong pre-approval", "Be flexible on closing date", "Keep contingencies clean"],
+    caption: "Multiple offers? Here's how my buyers stand out without overpaying. 🏆 Price matters, but terms win deals. Want help building your offer strategy? Let's chat." },
+  { day: 16, layout: "quote", title: "Seller testimonial",
+    quote: "Sold in 6 days over asking. {name}'s marketing plan was next level.", who: "Sarah K., Seller",
+    caption: "6 days. Over asking. Happy sellers. 🙌 Every home deserves a real marketing plan, not just a sign in the yard. Curious what I'd do for yours? DM me." },
+  { day: 17, layout: "bold", title: "Behind the scenes", kicker: "A DAY IN THE LIFE",
+    head: "What a realtor actually does all day", body: "Spoiler: it's not just showing pretty houses.",
+    caption: "Showings are maybe 10% of the job. The rest? Negotiating, paperwork, problem-solving, inspections, and LOTS of phone calls. 😅 Want a full day-in-the-life? Comment YES." },
+  { day: 18, layout: "tip", title: "Home maintenance", kicker: "HOMEOWNER TIP",
+    head: "Fall maintenance checklist", list: ["Clean gutters & downspouts", "Service your HVAC", "Test smoke + CO detectors"],
+    caption: "Protect your biggest investment. 🍂 These three quick tasks prevent expensive surprises later. Save this and share it with a new homeowner!" },
+  { day: 19, layout: "myth", title: "Myth vs fact: FSBO", head: "Myth vs. Fact",
+    myth: "Selling on your own saves you money.", fact: "Agent-assisted homes typically sell for more, and with far fewer legal headaches.",
+    caption: "FSBO sounds like savings, until pricing, negotiating, and contracts get tricky. 📑 A good agent should earn their fee and then some. Ask me how I do that for my sellers." },
+  { day: 20, layout: "photo", badge: "PRICE IMPROVED", title: "Price improvement",
+    caption: "💥 PRICE IMPROVED! {address} is now {price}. {beds} bd | {baths} ba | {sqft} sq ft. This is your sign to book a showing. DM me today!" },
+  { day: 21, layout: "stat", title: "Market update #2", kicker: "BY THE NUMBERS",
+    caption: "Numbers don't lie. 📈 Here's where {city} stands this {month}. Rates and prices change fast, so if you've been on the fence, let's map out your best move. Comment MARKET." },
+  { day: 22, layout: "bold", title: "Rent vs buy", kicker: "THINK ABOUT IT",
+    head: "Rent pays a mortgage. Just not yours.", body: "Let's see if owning makes sense for you this year.",
+    caption: "Every rent check builds equity… for your landlord. 🏦 Buying isn't right for everyone, but you should know your options. I'll run the numbers with you for free. DM me RENT." },
+  { day: 23, layout: "tip", title: "Moving checklist", kicker: "MOVING SOON?",
+    head: "Do these 2 weeks before moving day", list: ["Transfer utilities + internet", "Update your address", "Pack a first-night box"],
+    caption: "Moving day stress is real. 📦 Knock these out two weeks early and thank yourself later. What's the ONE thing you always forget when moving?" },
+  { day: 24, layout: "photo", badge: "JUST SOLD", title: "Just sold",
+    caption: "🔑 SOLD! Congratulations to my clients on closing {address}! Another happy chapter starts in {city}. Want to be my next success story? Let's talk." },
+  { day: 25, layout: "bold", title: "Referral thank-you", kicker: "THANK YOU",
+    head: "My business runs on your referrals", body: "Know someone thinking about moving? I'd be honored to help.",
+    caption: "The biggest compliment you can give me is introducing me to a friend. 🙏 If you know anyone thinking of buying or selling in {city}, I promise to take great care of them." },
+  { day: 26, layout: "myth", title: "Myth vs fact: list high", head: "Myth vs. Fact",
+    myth: "Listing high leaves room to negotiate.", fact: "Overpriced homes sit, then sell for less. Pricing right attracts more buyers.",
+    caption: "The fastest way to lose money as a seller? Overpricing. ⏳ The right price creates urgency and competition. Let me show you the data for your street." },
+  { day: 27, layout: "tip", title: "Credit tips", kicker: "BUYER TIP",
+    head: "Protect your credit while buying", list: ["Don't open new credit cards", "Don't finance big purchases", "Pay every bill on time"],
+    caption: "Under contract? Hands OFF the new car and furniture financing! 🚗🛋️ Big credit changes can derail your loan at the finish line. Share this with someone buying soon." },
+  { day: 28, layout: "photo", badge: "COMING SOON", title: "Coming soon",
+    caption: "👀 COMING SOON in {city}! {beds} bd | {baths} ba | {sqft} sq ft. Want early access before it hits the market? DM me SOON and you'll be first to know." },
+  { day: 29, layout: "bold", title: "Q&A prompt", kicker: "ASK ME ANYTHING",
+    head: "What's your #1 real estate question?", body: "Drop it below. I'll answer the best ones in a video this week.",
+    caption: "No question is too basic. 🙋 Drop your real estate question in the comments and I'll answer the top ones in a video this week!" },
+  { day: 30, layout: "agent", title: "Why work with me", kicker: "WHY ME",
+    head: "Local. Responsive. On your side.", body: "Clear communication, smart marketing, and a strategy built around your goals.",
+    caption: "30 days of tips later… let's make your move happen. 🏡 If you're buying or selling in {city} in the next 12 months, I'd love to help. Call {phone} or DM me anytime." }
+];
+const HASHTAGS = "#realestate #realtor #{cityTag}realestate #{cityTag}realtor #homesforsale #justlisted #firsttimehomebuyer #househunting #realestateagent #dreamhome";
+
+const THEMES = [
+  ["#1f3a5f", "#c9a227", "#f6f1e9"], // navy & gold
+  ["#1d1d1f", "#d4af7a", "#f4f1ec"], // black & champagne
+  ["#2f4a3a", "#d8b48a", "#f3efe6"], // forest & sand
+  ["#7a3e3e", "#e2c2a2", "#f8f2ec"], // terracotta
+  ["#3b4a6b", "#e8a87c", "#f5f3f0"], // slate & peach
+  ["#0f5257", "#f2c14e", "#f2f7f5"], // teal & sun
+];
+
+// ---------- State ----------
+const ids = ["agentName","brokerage","phone","handle","city","license","c1","c2","c3","fontPair","address","price","openHouse","beds","baths","sqft","mMedian","mDays","mActive","mMonth","format"];
+const $ = id => document.getElementById(id);
+const imgs = { headshot: null, listing: null };
+try {
+  const saved = JSON.parse(localStorage.getItem("rps-settings") || "{}");
+  ids.forEach(k => { if (saved[k] != null && $(k)) $(k).value = saved[k]; });
+} catch (e) {}
+function S() { const o = {}; ids.forEach(k => o[k] = $(k).value); return o; }
+function save() { try { localStorage.setItem("rps-settings", JSON.stringify(S())); } catch (e) {} }
+function fill(t, s) {
+  return String(t || "")
+    .replaceAll("{name}", s.agentName).replaceAll("{city}", s.city).replaceAll("{address}", s.address)
+    .replaceAll("{price}", s.price).replaceAll("{beds}", s.beds).replaceAll("{baths}", s.baths).replaceAll("{sqft}", s.sqft)
+    .replaceAll("{openhouse}", s.openHouse).replaceAll("{phone}", s.phone).replaceAll("{month}", s.mMonth)
+    .replaceAll("{median}", s.mMedian).replaceAll("{days}", s.mDays).replaceAll("{active}", s.mActive);
+}
+function caption(p, s) {
+  const tag = s.city.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return fill(p.caption, s) + "\n\n" + HASHTAGS.replaceAll("{cityTag}", tag);
+}
+
+// ---------- Drawing helpers ----------
+const SIZES = { portrait: [1080, 1350], square: [1080, 1080], story: [1080, 1920] };
+function fonts(s) {
+  return s.fontPair === "serif"
+    ? { head: 'Georgia, "Times New Roman", "DejaVu Serif", serif', body: 'Inter, "Helvetica Neue", Arial, sans-serif' }
+    : { head: 'Inter, "Helvetica Neue", Arial, sans-serif', body: 'Inter, "Helvetica Neue", Arial, sans-serif' };
+}
+function wrap(ctx, text, maxW) {
+  const words = text.split(/\s+/); const lines = []; let line = "";
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+// Draws text that shrinks until it fits within maxLines; returns the bottom y.
+function textBlock(ctx, text, x, y, maxW, size, opts = {}) {
+  const { font, weight = "700", color = "#000", lh = 1.15, maxLines = 4, align = "left", minSize = 28 } = opts;
+  let lines;
+  for (;;) {
+    ctx.font = `${weight} ${size}px ${font}`;
+    lines = wrap(ctx, text, maxW);
+    if (lines.length <= maxLines || size <= minSize) break;
+    size -= 4;
+  }
+  ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = "top";
+  const ax = align === "center" ? x + maxW / 2 : x;
+  lines.forEach((l, i) => ctx.fillText(l, ax, y + i * size * lh));
+  ctx.textAlign = "left";
+  return y + lines.length * size * lh;
+}
+function cover(ctx, img, x, y, w, h) {
+  const r = Math.max(w / img.width, h / img.height);
+  const iw = img.width * r, ih = img.height * r;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); ctx.restore();
+}
+function placeholderPhoto(ctx, x, y, w, h, s) {
+  const g = ctx.createLinearGradient(x, y, x + w, y + h);
+  g.addColorStop(0, s.c1); g.addColorStop(1, shade(s.c1, 0.35));
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  // simple house line-art
+  ctx.save(); ctx.strokeStyle = hexA(s.c2, 0.85); ctx.lineWidth = 10; ctx.lineJoin = "round";
+  const cx = x + w / 2, cy = y + h / 2 + 20, u = Math.min(w, h) / 6;
+  ctx.beginPath(); ctx.moveTo(cx - u * 1.4, cy - u * 0.1); ctx.lineTo(cx, cy - u * 1.4); ctx.lineTo(cx + u * 1.4, cy - u * 0.1); ctx.stroke();
+  ctx.strokeRect(cx - u, cy - u * 0.3, u * 2, u * 1.5);
+  ctx.strokeRect(cx - u * 0.25, cy + u * 0.4, u * 0.5, u * 0.8);
+  ctx.restore();
+}
+function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16); const f = c => Math.max(0, Math.min(255, Math.round(c * (1 - amt))));
+  return "#" + [f(n >> 16), f((n >> 8) & 255), f(n & 255)].map(v => v.toString(16).padStart(2, "0")).join("");
+}
+function lum(hex) { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; }
+function onColor(hex) { return lum(hex) > 0.6 ? "#1d1d1f" : "#ffffff"; }
+
+function footer(ctx, W, H, s, F, dark) {
+  const fh = 130, y = H - fh;
+  ctx.fillStyle = dark ? s.c1 : "#ffffff"; ctx.fillRect(0, y, W, fh);
+  ctx.fillStyle = s.c2; ctx.fillRect(0, y, W, 8);
+  const ink = dark ? onColor(s.c1) : "#1d1d1f";
+  let x = 60;
+  if (imgs.headshot) {
+    ctx.save(); ctx.beginPath(); ctx.arc(x + 40, y + 69, 40, 0, Math.PI * 2); ctx.clip();
+    cover(ctx, imgs.headshot, x, y + 29, 80, 80); ctx.restore(); x += 104;
+  }
+  ctx.fillStyle = ink; ctx.textBaseline = "top";
+  ctx.font = `700 34px ${F.body}`; ctx.fillText(s.agentName, x, y + 30);
+  ctx.font = `400 24px ${F.body}`; ctx.globalAlpha = 0.8;
+  ctx.fillText([s.brokerage, s.license].filter(Boolean).join(" · "), x, y + 74); ctx.globalAlpha = 1;
+  ctx.textAlign = "right";
+  ctx.font = `700 28px ${F.body}`; ctx.fillText(s.phone, W - 60, y + 32);
+  ctx.font = `400 24px ${F.body}`; ctx.globalAlpha = 0.8; ctx.fillText(s.handle, W - 60, y + 74);
+  ctx.globalAlpha = 1; ctx.textAlign = "left";
+  return y;
+}
+function kicker(ctx, text, x, y, s, F, color) {
+  ctx.font = `700 26px ${F.body}`;
+  ctx.fillStyle = color || s.c2; ctx.textBaseline = "top";
+  ctx.letterSpacing = "4px"; ctx.fillText(text, x, y); ctx.letterSpacing = "0px";
+  return y + 48;
+}
+
+// ---------- Layouts ----------
+const LAYOUTS = {
+  photo(ctx, W, H, p, s, F) {
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+    const ph = Math.round(H * 0.56);
+    imgs.listing ? cover(ctx, imgs.listing, 0, 0, W, ph) : placeholderPhoto(ctx, 0, 0, W, ph, s);
+    // badge
+    ctx.font = `800 44px ${F.body}`; ctx.letterSpacing = "6px";
+    const bw = ctx.measureText(p.badge).width + 80;
+    ctx.fillStyle = s.c2; rrect(ctx, 60, ph - 50, bw, 100, 12); ctx.fill();
+    ctx.fillStyle = onColor(s.c2); ctx.textBaseline = "middle"; ctx.fillText(p.badge, 100, ph); ctx.letterSpacing = "0px";
+    const fy = footer(ctx, W, H, s, F, true);
+    const room = fy - (ph + 50);
+    let y = ph + 50 + Math.max(30, (room - 260) / 2);
+    y = textBlock(ctx, s.address, 60, y, W - 120, 64, { font: F.head, color: s.c1, maxLines: 2 });
+    ctx.font = `500 34px ${F.body}`; ctx.fillStyle = "#55555a"; ctx.textBaseline = "top";
+    const det = `${s.beds} Beds   •   ${s.baths} Baths   •   ${s.sqft} Sq Ft`;
+    ctx.fillText(p.badge === "OPEN HOUSE" ? `${s.openHouse}   •   ${s.beds} bd / ${s.baths} ba` : det, 60, y + 16);
+    if (p.badge !== "JUST SOLD" && p.badge !== "UNDER CONTRACT") {
+      ctx.font = `800 64px ${F.body}`; ctx.fillStyle = s.c1; ctx.fillText(s.price, 60, y + 76);
+    } else {
+      ctx.font = `700 44px ${F.head}`; ctx.fillStyle = s.c1; ctx.fillText(p.badge === "JUST SOLD" ? "Congratulations to my clients!" : "Another one, off the market.", 60, y + 82);
+    }
+  },
+  bold(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c1; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = hexA(s.c2, 0.5); ctx.lineWidth = 3; ctx.strokeRect(40, 40, W - 80, H - 210);
+    const fy = footer(ctx, W, H, s, F, false);
+    const ink = onColor(s.c1);
+    const top = (fy - 40) * 0.26;
+    let y = kicker(ctx, p.kicker, 100, top, s, F);
+    ctx.fillStyle = s.c2; ctx.fillRect(100, y, 90, 6); y += 50;
+    y = textBlock(ctx, fill(p.head, s), 100, y, W - 200, 104, { font: F.head, color: ink, maxLines: 4 });
+    textBlock(ctx, fill(p.body, s), 100, y + 40, W - 220, 40, { font: F.body, weight: "400", color: hexA(ink === "#ffffff" ? "#ffffff" : "#1d1d1f", 0.85), lh: 1.4, maxLines: 4 });
+  },
+  tip(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = s.c1; ctx.fillRect(0, 0, 24, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(90, (fy - 860) / 2);
+    y = kicker(ctx, p.kicker, 100, y, s, F, s.c1);
+    y = textBlock(ctx, fill(p.head, s), 100, y + 10, W - 200, 84, { font: F.head, color: s.c1, maxLines: 3 }) + 50;
+    p.list.forEach((item, i) => {
+      ctx.fillStyle = "#fff"; rrect(ctx, 100, y, W - 200, 130, 18); ctx.fill();
+      ctx.fillStyle = s.c2; ctx.beginPath(); ctx.arc(170, y + 65, 38, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = onColor(s.c2); ctx.font = `800 40px ${F.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(i + 1), 170, y + 67); ctx.textAlign = "left";
+      ctx.fillStyle = "#1d1d1f"; ctx.font = `600 38px ${F.body}`; ctx.fillText(item, 236, y + 67);
+      y += 154;
+    });
+    ctx.font = `600 26px ${F.body}`; ctx.fillStyle = s.c1; ctx.textBaseline = "top";
+    ctx.fillText("SAVE THIS FOR LATER  →", 100, y + 20);
+  },
+  stat(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(80, (fy - 900) / 2);
+    y = kicker(ctx, p.kicker, 80, y, s, F, s.c1);
+    y = textBlock(ctx, `${s.city} · ${s.mMonth}`, 80, y, W - 160, 72, { font: F.head, color: s.c1, maxLines: 2 }) + 40;
+    ctx.fillStyle = s.c1; rrect(ctx, 80, y, W - 160, 320, 24); ctx.fill();
+    ctx.fillStyle = hexA(onColor(s.c1), 0.75); ctx.font = `600 30px ${F.body}`; ctx.textBaseline = "top";
+    ctx.fillText("MEDIAN SALE PRICE", 130, y + 50);
+    ctx.fillStyle = s.c2; ctx.font = `800 150px ${F.body}`; ctx.fillText(s.mMedian, 124, y + 100);
+    y += 360;
+    const cw = (W - 160 - 30) / 2;
+    [["AVG DAYS ON MARKET", s.mDays], ["ACTIVE LISTINGS", s.mActive]].forEach(([l, v], i) => {
+      const x = 80 + i * (cw + 30);
+      ctx.fillStyle = "#fff"; rrect(ctx, x, y, cw, 220, 24); ctx.fill();
+      ctx.fillStyle = "#6b6b70"; ctx.font = `600 24px ${F.body}`; ctx.fillText(l, x + 40, y + 44);
+      ctx.fillStyle = s.c1; ctx.font = `800 88px ${F.body}`; ctx.fillText(v, x + 36, y + 90);
+    });
+    ctx.fillStyle = "#6b6b70"; ctx.font = `400 22px ${F.body}`;
+    ctx.fillText("Source: local MLS data. DM me for your neighborhood’s numbers.", 80, y + 250);
+  },
+  quote(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(90, (fy - 760) / 2);
+    ctx.fillStyle = s.c2; ctx.font = `700 260px Georgia, serif`; ctx.textBaseline = "top"; ctx.fillText("“", 80, y - 40);
+    y += 170;
+    y = textBlock(ctx, fill(p.quote, s), 100, y, W - 200, 62, { font: F.head, weight: "400", color: s.c1, lh: 1.3, maxLines: 6 }) + 40;
+    ctx.fillStyle = s.c2; ctx.font = `400 52px ${F.body}`; ctx.fillText("★★★★★", 100, y);
+    ctx.fillStyle = "#1d1d1f"; ctx.font = `700 34px ${F.body}`; ctx.fillText("— " + p.who, 100, y + 80);
+  },
+  myth(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(70, (fy - 980) / 2);
+    y = textBlock(ctx, p.head, 80, y, W - 160, 92, { font: F.head, color: s.c1, maxLines: 1 }) + 40;
+    const box = (label, text, bg, ink, by) => {
+      ctx.fillStyle = bg; rrect(ctx, 80, by, W - 160, 380, 24); ctx.fill();
+      ctx.font = `800 30px ${F.body}`; ctx.fillStyle = ink === "#ffffff" ? s.c2 : s.c1; ctx.letterSpacing = "5px";
+      ctx.textBaseline = "top"; ctx.fillText(label, 130, by + 50); ctx.letterSpacing = "0px";
+      textBlock(ctx, fill(text, s), 130, by + 110, W - 260, 52, { font: F.head, weight: "600", color: ink, lh: 1.25, maxLines: 4 });
+    };
+    box("✕  MYTH", p.myth, "#ffffff", "#1d1d1f", y);
+    box("✓  FACT", p.fact, s.c1, onColor(s.c1), y + 410);
+  },
+  agent(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c1; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, false);
+    const ink = onColor(s.c1);
+    let y = Math.max(80, (fy - 900) / 2);
+    const r = 170, cx = W / 2;
+    ctx.fillStyle = s.c2; ctx.beginPath(); ctx.arc(cx, y + r, r + 10, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, y + r, r, 0, Math.PI * 2); ctx.clip();
+    if (imgs.headshot) cover(ctx, imgs.headshot, cx - r, y, r * 2, r * 2);
+    else { ctx.fillStyle = shade(s.c1, -0.25); ctx.fillRect(cx - r, y, r * 2, r * 2);
+      ctx.fillStyle = hexA(ink, 0.9); ctx.font = `700 120px ${F.head}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(s.agentName.split(" ").map(w => w[0]).join("").slice(0, 2), cx, y + r + 6); ctx.textAlign = "left"; }
+    ctx.restore();
+    y += r * 2 + 60;
+    ctx.font = `700 26px ${F.body}`; ctx.fillStyle = s.c2; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.letterSpacing = "4px"; ctx.fillText(p.kicker, cx, y); ctx.letterSpacing = "0px"; ctx.textAlign = "left";
+    y = textBlock(ctx, fill(p.head, s), 90, y + 56, W - 180, 76, { font: F.head, color: ink, maxLines: 3, align: "center" });
+    textBlock(ctx, fill(p.body, s), 120, y + 30, W - 240, 36, { font: F.body, weight: "400", color: hexA(ink, 0.85), lh: 1.4, maxLines: 4, align: "center" });
+  }
+};
+
+function render(canvas, p, s) {
+  const [W, H] = SIZES[s.format];
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  LAYOUTS[p.layout](ctx, W, H, p, s, fonts(s));
+}
+
+// ---------- UI ----------
+const grid = $("grid"); const canvases = [];
+POSTS.forEach((p, i) => {
+  const card = document.createElement("div"); card.className = "card";
+  const c = document.createElement("canvas"); canvases.push(c);
+  card.innerHTML = `<div class="meta"><strong>Day ${p.day} · ${p.title}</strong><span>${p.layout === "photo" ? "Uses listing photo" : "Brand post"}</span></div>`;
+  card.prepend(c);
+  const actions = document.createElement("div"); actions.className = "actions";
+  const dl = document.createElement("button"); dl.className = "btn"; dl.textContent = "Download";
+  dl.onclick = () => download(c, p);
+  const cp = document.createElement("button"); cp.className = "btn ghost"; cp.textContent = "Caption";
+  cp.onclick = () => copyText(caption(p, S()));
+  actions.append(dl, cp); card.append(actions); grid.append(card);
+});
+function drawAll() { const s = S(); POSTS.forEach((p, i) => render(canvases[i], p, s)); save(); }
+function fileName(p) { return `day-${String(p.day).padStart(2, "0")}-${p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`; }
+function download(c, p) {
+  return new Promise(res => c.toBlob(b => {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = fileName(p); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); res(); }, 300);
+  }, "image/png"));
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast("Caption copied"); }
+  catch (e) { prompt("Copy your caption:", t); }
+}
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1600); }
+$("dlAll").onclick = async () => { for (let i = 0; i < POSTS.length; i++) await download(canvases[i], POSTS[i]); toast("30 posts downloaded"); };
+$("dlCaptions").onclick = () => {
+  const s = S();
+  const txt = POSTS.map(p => `DAY ${p.day} — ${p.title.toUpperCase()}\n${caption(p, s)}\n`).join("\n------------------------------\n\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" }));
+  a.download = "30-day-captions.txt"; a.click();
+};
+THEMES.forEach(t => {
+  const b = document.createElement("button"); b.style.background = `linear-gradient(135deg, ${t[0]} 55%, ${t[1]} 55%)`;
+  b.title = "Apply theme"; b.onclick = () => { $("c1").value = t[0]; $("c2").value = t[1]; $("c3").value = t[2]; drawAll(); };
+  $("themes").append(b);
+});
+function loadImg(input, key) {
+  input.onchange = () => {
+    const f = input.files[0]; if (!f) return;
+    const img = new Image(); img.onload = () => { imgs[key] = img; drawAll(); }; img.src = URL.createObjectURL(f);
+  };
+}
+loadImg($("headshot"), "headshot"); loadImg($("listing"), "listing");
+ids.forEach(k => $(k).addEventListener("input", drawAll));
+document.fonts && document.fonts.ready ? document.fonts.ready.then(drawAll) : drawAll();
+drawAll();
+// Hooks for automated preview rendering
+window.__rps = { POSTS, canvases, drawAll, imgs, S, caption };
+</script>
+</body>
+</html>
