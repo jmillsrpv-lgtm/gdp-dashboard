@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fence Mapper</title>
+<style>
+  :root{--bg:#f6f5f1;--fg:#1d1d1b;--card:#fff;--line:#d8d5cc;--accent:#1f6f4a;--gate:#d9730d}
+  @media (prefers-color-scheme:dark){:root{--bg:#171815;--fg:#ecebe5;--card:#22231f;--line:#3a3b35;--accent:#5cc28f;--gate:#f29a45}}
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+  h1{font-size:20px;margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:16px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+  textarea{width:100%;height:210px;font:13px/1.4 ui-monospace,monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px}
+  label{display:block;font-size:13px;margin-top:8px}
+  input[type=range]{width:100%}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:8px 12px;font-size:14px;cursor:pointer;margin-top:8px}
+  canvas{width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;touch-action:none}
+  .stats{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:14px}
+  .hint{font-size:12px;opacity:.75}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+  td,th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
+</style>
+</head>
+<body>
+<h1>Fence Mapper &mdash; 130 Belgrove Blvd, Brandon MS</h1>
+<div class="grid">
+  <div>
+    <div class="card">
+      <b>1. Paste pins</b>
+      <div class="hint">One per line: <code>label, lat, lon</code>. Corners are joined in the order listed and closed back to the first. Any label containing "gate" is treated as a gate pin (not a corner).</div>
+      <textarea id="pins" spellcheck="false">NW corner, 32.27300, -90.00200
+NE corner, 32.27300, -90.00170
+SE corner, 32.27280, -90.00170
+SW corner, 32.27280, -90.00200
+Gate hinge, 32.27280, -90.00185
+Gate latch, 32.27280, -90.00180</textarea>
+      <button id="draw">Draw</button>
+      <div class="hint">The sample coordinates above are placeholders, not your yard.</div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <b>2. Optional aerial overlay</b>
+      <div class="hint">Upload a satellite screenshot, then line it up with the outline.</div>
+      <input type="file" id="img" accept="image/*">
+      <label>Scale <input type="range" id="sc" min="0.1" max="6" step="0.01" value="1"></label>
+      <label>Rotate <input type="range" id="rot" min="-180" max="180" step="0.1" value="0"></label>
+      <label>Move X <input type="range" id="ox" min="-800" max="800" step="1" value="0"></label>
+      <label>Move Y <input type="range" id="oy" min="-600" max="600" step="1" value="0"></label>
+      <label>Opacity <input type="range" id="op" min="0.1" max="1" step="0.05" value="0.7"></label>
+      <button id="save">Download PNG</button>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <b>Measurements</b>
+      <div class="stats" id="stats"></div>
+      <table id="tbl"></table>
+    </div>
+  </div>
+  <div><canvas id="cv" width="1000" height="760"></canvas></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');
+let img=null;
+const FT=3.28084;
+
+function parse(){
+  return $('pins').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const p=l.split(',').map(s=>s.trim());
+    if(p.length<3)return null;
+    const lat=parseFloat(p[p.length-2]),lon=parseFloat(p[p.length-1]);
+    if(isNaN(lat)||isNaN(lon))return null;
+    return {name:p.slice(0,p.length-2).join(', ')||'pt',lat,lon};
+  }).filter(Boolean);
+}
+function project(pts){
+  const lat0=pts.reduce((a,p)=>a+p.lat,0)/pts.length,lon0=pts.reduce((a,p)=>a+p.lon,0)/pts.length;
+  const kx=111320*Math.cos(lat0*Math.PI/180)*FT,ky=110540*FT;
+  return pts.map(p=>({...p,x:(p.lon-lon0)*kx,y:(p.lat-lat0)*ky}));
+}
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+
+function draw(){
+  const all=project(parse());
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const dark=matchMedia('(prefers-color-scheme:dark)').matches;
+  ctx.fillStyle=dark?'#22231f':'#fff';ctx.fillRect(0,0,cv.width,cv.height);
+  if(all.length<3){$('stats').textContent='Need at least 3 pins.';return;}
+  const xs=all.map(p=>p.x),ys=all.map(p=>p.y);
+  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+  const pad=90,s=Math.min((cv.width-2*pad)/Math.max(maxx-minx,1),(cv.height-2*pad)/Math.max(maxy-miny,1));
+  const T=p=>[pad+(p.x-minx)*s+((cv.width-2*pad)-(maxx-minx)*s)/2,cv.height-pad-(p.y-miny)*s-((cv.height-2*pad)-(maxy-miny)*s)/2];
+  if(img){
+    ctx.save();ctx.globalAlpha=+$('op').value;
+    ctx.translate(cv.width/2+ +$('ox').value,cv.height/2+ +$('oy').value);
+    ctx.rotate(+$('rot').value*Math.PI/180);ctx.scale(+$('sc').value,+$('sc').value);
+    ctx.drawImage(img,-img.width/2,-img.height/2);ctx.restore();
+  }
+  const corners=all.filter(p=>!/gate/i.test(p.name)),gates=all.filter(p=>/gate/i.test(p.name));
+  const fg=dark?'#ecebe5':'#1d1d1b';
+  // fence line
+  ctx.lineWidth=4;ctx.strokeStyle='#1f6f4a';ctx.lineJoin='round';
+  ctx.beginPath();corners.forEach((p,i)=>{const [x,y]=T(p);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.stroke();
+  const rows=[];let per=0,area=0;
+  ctx.font='bold 14px system-ui';
+  corners.forEach((p,i)=>{
+    const q=corners[(i+1)%corners.length],d=dist(p,q);per+=d;
+    area+=p.x*q.y-q.x*p.y;
+    rows.push([p.name+' → '+q.name,d]);
+    const [x1,y1]=T(p),[x2,y2]=T(q);
+    const mx=(x1+x2)/2,my=(y1+y2)/2,t=d.toFixed(1)+' ft',w=ctx.measureText(t).width;
+    ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(mx-w/2-4,my-11,w+8,20);
+    ctx.fillStyle='#111';ctx.fillText(t,mx-w/2,my+5);
+  });
+  area=Math.abs(area)/2;
+  corners.forEach(p=>{
+    const [x,y]=T(p);
+    ctx.fillStyle='#1f6f4a';ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();
+    ctx.font='13px system-ui';const w=ctx.measureText(p.name).width;
+    ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(x+9,y-24,w+8,18);
+    ctx.fillStyle='#111';ctx.fillText(p.name,x+13,y-10);
+  });
+  gates.forEach(p=>{
+    const [x,y]=T(p);
+    ctx.fillStyle='#d9730d';ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();
+    ctx.font='13px system-ui';const w=ctx.measureText(p.name).width;
+    ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(x+9,y+8,w+8,18);
+    ctx.fillStyle='#111';ctx.fillText(p.name,x+13,y+22);
+  });
+  let gw='';
+  if(gates.length>=2){
+    const [a,b]=[T(gates[0]),T(gates[1])];
+    ctx.strokeStyle='#d9730d';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
+    gw=` · Gate width ≈ ${dist(gates[0],gates[1]).toFixed(1)} ft`;
+  }
+  // north arrow + scale bar
+  ctx.fillStyle=fg;ctx.strokeStyle=fg;ctx.lineWidth=2;ctx.font='bold 16px system-ui';
+  ctx.beginPath();ctx.moveTo(950,70);ctx.lineTo(950,25);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(950,18);ctx.lineTo(943,34);ctx.lineTo(957,34);ctx.fill();ctx.fillText('N',944,92);
+  const bar=[5,10,20,25,50,100].find(v=>v*s>120)||100;
+  ctx.fillRect(40,cv.height-40,bar*s,5);ctx.font='13px system-ui';ctx.fillText(bar+' ft',40,cv.height-48);
+  $('stats').innerHTML=`<span><b>Perimeter</b> ${per.toFixed(1)} ft</span><span><b>Area</b> ${Math.round(area).toLocaleString()} sq ft (${(area/43560).toFixed(3)} ac)</span>`+(gw?`<span>${gw.slice(3)}</span>`:'')+`<span class="hint">Straight-line fence length: ${(per-(gates.length>=2?dist(gates[0],gates[1]):0)).toFixed(1)} ft excluding gate</span>`;
+  $('tbl').innerHTML='<tr><th>Side</th><th>ft</th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1].toFixed(1)}</td></tr>`).join('');
+}
+$('draw').onclick=draw;
+['sc','rot','ox','oy','op'].forEach(id=>$(id).oninput=draw);
+$('img').onchange=e=>{const f=e.target.files[0];if(!f)return;const i=new Image();i.onload=()=>{img=i;draw()};i.src=URL.createObjectURL(f)};
+$('save').onclick=()=>{const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='fence-map.png';a.click()};
+draw();
+</script>
+</body>
+</html>
