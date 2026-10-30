@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realtor Holiday Post Studio</title>
+<style>
+  :root {
+    --bg: #f6f4f0; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e4e1db; --accent: #1f3a5f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 20px 24px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .wrap { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 80px); }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 20px; overflow-y: auto; }
+  aside h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; }
+  aside h2:first-child { margin-top: 0; }
+  label { display: block; font-size: 13px; margin: 8px 0 3px; color: var(--muted); }
+  input[type=text], select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; }
+  .row { display: flex; gap: 8px; }
+  .row > div { flex: 1; }
+  input[type=color] { width: 100%; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: #fff; }
+  .themes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .themes button { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+  .btn { display: inline-block; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  main { padding: 20px 24px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .card canvas { width: 100%; height: auto; display: block; background: #ddd; }
+  .card .meta { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .card .meta strong { font-size: 13px; }
+  .card .meta span { font-size: 12px; color: var(--muted); }
+  .card .actions { display: flex; gap: 6px; padding: 0 12px 12px; }
+  .card .actions button { flex: 1; padding: 7px; font-size: 12px; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1d1d1f; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 820px) { .wrap { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Realtor Holiday Post Studio</h1>
+    <p>15 branded Thanksgiving, holiday, winter and New Year posts. Type your details once, then download everything.</p>
+  </div>
+  <div class="toolbar" style="margin:0">
+    <button class="btn" id="dlAll">Download all (PNG)</button>
+    <button class="btn ghost" id="dlCaptions">Download captions (.txt)</button>
+  </div>
+</header>
+<div class="wrap">
+  <aside>
+    <h2>Your details</h2>
+    <label>Agent name</label><input type="text" id="agentName" value="Jordan Avery">
+    <label>Brokerage</label><input type="text" id="brokerage" value="Avery Home Group">
+    <div class="row">
+      <div><label>Phone</label><input type="text" id="phone" value="(555) 123-4567"></div>
+      <div><label>Instagram / TikTok</label><input type="text" id="handle" value="@averyhomes"></div>
+    </div>
+    <label>City / market</label><input type="text" id="city" value="Austin">
+    <label>License line (optional)</label><input type="text" id="license" value="">
+
+    <h2>Brand</h2>
+    <div class="themes" id="themes"></div>
+    <div class="row">
+      <div><label>Primary</label><input type="color" id="c1" value="#1f3a5f"></div>
+      <div><label>Accent</label><input type="color" id="c2" value="#c9a227"></div>
+      <div><label>Background</label><input type="color" id="c3" value="#f6f1e9"></div>
+    </div>
+    <label>Headline style</label>
+    <select id="fontPair">
+      <option value="serif">Classic serif (luxury)</option>
+      <option value="sans">Modern sans (clean)</option>
+    </select>
+
+    <h2>Photos</h2>
+    <label>Headshot</label><input type="file" id="headshot" accept="image/*">
+    <label>Listing / lifestyle photo</label><input type="file" id="listing" accept="image/*">
+    <p class="hint">Photos never leave your computer. Without a photo, a tasteful brand-color background is used.</p>
+
+    <h2>Listing details (for listing posts)</h2>
+    <label>Address</label><input type="text" id="address" value="1428 Maple Ridge Dr">
+    <div class="row">
+      <div><label>Price</label><input type="text" id="price" value="$649,000"></div>
+      <div><label>Open house</label><input type="text" id="openHouse" value="Sat 1–4 PM"></div>
+    </div>
+    <div class="row">
+      <div><label>Beds</label><input type="text" id="beds" value="4"></div>
+      <div><label>Baths</label><input type="text" id="baths" value="3"></div>
+      <div><label>Sq ft</label><input type="text" id="sqft" value="2,450"></div>
+    </div>
+
+    <h2>Market numbers (for market update)</h2>
+    <div class="row">
+      <div><label>Median price</label><input type="text" id="mMedian" value="$512K"></div>
+      <div><label>Days on market</label><input type="text" id="mDays" value="34"></div>
+    </div>
+    <div class="row">
+      <div><label>Active listings</label><input type="text" id="mActive" value="2,140"></div>
+      <div><label>Month</label><input type="text" id="mMonth" value="October"></div>
+    </div>
+    <p class="hint">Use your MLS numbers. Settings are saved in this browser.</p>
+  </aside>
+  <main>
+    <div class="toolbar">
+      <label style="margin:0">Format</label>
+      <select id="format" style="width:auto">
+        <option value="portrait">Instagram portrait 1080×1350</option>
+        <option value="square">Square 1080×1080</option>
+        <option value="story">Story / Reel / TikTok cover 1080×1920</option>
+      </select>
+      <span class="hint">Click “Caption” to copy the matching ready-to-post caption.</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- Content: Holiday & Year-End Pack ----------
+const POSTS = [
+  {
+    "day": 1,
+    "layout": "bold",
+    "title": "Thanksgiving gratitude",
+    "kicker": "HAPPY THANKSGIVING",
+    "head": "Grateful for every family I've helped home",
+    "body": "Thank you for trusting me with your biggest moves this year.",
+    "caption": "This Thanksgiving I'm counting my blessings, and you're one of them. 🦃 Thank you to every client, referral and neighbor in {city} who made this year special. Wishing you a full table and a full heart!"
+  },
+  {
+    "day": 2,
+    "layout": "tip",
+    "title": "Hosting tips",
+    "kicker": "HOSTING THIS YEAR?",
+    "head": "3 quick home checks before guests arrive",
+    "list": [
+      "Test smoke detectors",
+      "Clear gutters and walkways",
+      "Run the garbage disposal with ice"
+    ],
+    "caption": "Hosting the holidays? 🏡 Knock out these three quick checks so the only surprise is dessert. Save this for your pre-party list!"
+  },
+  {
+    "day": 3,
+    "layout": "myth",
+    "title": "Myth vs fact: winter market",
+    "head": "Myth vs. Fact",
+    "myth": "Nobody buys homes during the holidays.",
+    "fact": "Holiday buyers are serious buyers, and there's far less competition.",
+    "caption": "Thinking of waiting until spring? ❄️ Holiday buyers are motivated and there are fewer listings to compete with. DM me HOLIDAY and I'll show you what's moving in {city} right now."
+  },
+  {
+    "day": 4,
+    "layout": "bold",
+    "title": "Black Friday home value",
+    "kicker": "BLACK FRIDAY DEAL",
+    "head": "Free home value report. Today only (kidding, it's always free).",
+    "body": "Find out what your home is worth in today's market.",
+    "caption": "The best Black Friday deal in {city}? A free, no-pressure home value report from a local expert. 🏷️ DM me VALUE and I'll send yours this week."
+  },
+  {
+    "day": 5,
+    "layout": "tip",
+    "title": "Winterize your home",
+    "kicker": "WINTER CHECKLIST",
+    "head": "Protect your home before the first freeze",
+    "list": [
+      "Disconnect outdoor hoses",
+      "Seal drafty windows and doors",
+      "Service the furnace"
+    ],
+    "caption": "A little prep now saves big repair bills later. 🥶 Here's my quick winter checklist for {city} homeowners. Save it and share it with a new homeowner!"
+  },
+  {
+    "day": 6,
+    "layout": "bold",
+    "title": "Holiday decor + selling",
+    "kicker": "SELLING THIS SEASON?",
+    "head": "Decorate to sell: less is more",
+    "body": "Keep it warm and simple so buyers can picture their own holidays here.",
+    "caption": "Listing over the holidays? 🎄 A few tasteful touches feel cozy. Too much hides your home's best features. Want my staging checklist? Comment DECOR."
+  },
+  {
+    "day": 7,
+    "layout": "quote",
+    "title": "Holiday client story",
+    "quote": "We closed two weeks before Christmas and celebrated in our new home. Best gift ever.",
+    "who": "Happy new homeowners",
+    "caption": "Nothing beats handing over keys in time for the holidays. 🎁 If you're dreaming of a new home in the new year, let's start planning now."
+  },
+  {
+    "day": 8,
+    "layout": "bold",
+    "title": "Shop local",
+    "kicker": "SHOP SMALL",
+    "head": "My favorite local gifts in {city}",
+    "body": "Tell me your favorite small business and I'll share it.",
+    "caption": "Supporting the businesses that make {city} home. 🛍️ Drop your favorite local shop below and I'll feature a few in my stories this week!"
+  },
+  {
+    "day": 9,
+    "layout": "agent",
+    "title": "Season's greetings",
+    "kicker": "SEASON'S GREETINGS",
+    "head": "Wishing you warmth, joy and home",
+    "body": "From my family to yours, happy holidays.",
+    "caption": "Happy holidays from my family to yours! ✨ Thank you for an incredible year, {city}. I'm so grateful to do what I love in a community I love."
+  },
+  {
+    "day": 10,
+    "layout": "tip",
+    "title": "Holiday safety",
+    "kicker": "HOLIDAY SAFETY",
+    "head": "Keep your home safe this season",
+    "list": [
+      "Water the tree every day",
+      "Use timers on lights",
+      "Never leave candles unattended"
+    ],
+    "caption": "Holiday fires are more common than you'd think. 🔥 Three simple habits keep your home and family safe. Share this with someone who goes all out on decorations!"
+  },
+  {
+    "day": 11,
+    "layout": "stat",
+    "title": "Year in review",
+    "kicker": "YEAR IN REVIEW",
+    "caption": "Here's how the {city} market wrapped up this year: median price {median}, {days} days on market, {active} active listings. 📊 Want to know what it means for your plans next year? DM me MARKET."
+  },
+  {
+    "day": 12,
+    "layout": "bold",
+    "title": "New year goals",
+    "kicker": "NEW YEAR, NEW HOME?",
+    "head": "Is buying a home on your goals list?",
+    "body": "Let's make a simple plan to get you there this year.",
+    "caption": "New year, new goals. 🥂 If owning a home is on your list, the best time to start planning is now. Comment PLAN and I'll send you my step-by-step guide."
+  },
+  {
+    "day": 13,
+    "layout": "tip",
+    "title": "Year-end money moves",
+    "kicker": "BEFORE DEC 31",
+    "head": "Smart homeowner money moves",
+    "list": [
+      "Gather property tax records",
+      "Review your home insurance",
+      "Check if refinancing makes sense"
+    ],
+    "caption": "Year-end is the perfect time to check your home finances. 💰 Not tax advice, just a reminder to ask the right pros the right questions!"
+  },
+  {
+    "day": 14,
+    "layout": "bold",
+    "title": "Thank you post",
+    "kicker": "THANK YOU",
+    "head": "This year, you made it all possible",
+    "body": "Every referral, review and kind word meant the world.",
+    "caption": "Before the year ends, a huge thank you. 🙏 My business runs on your trust and referrals. Know someone thinking about moving in the new year? I'd love to help them."
+  },
+  {
+    "day": 15,
+    "layout": "bold",
+    "title": "Happy New Year",
+    "kicker": "HAPPY NEW YEAR",
+    "head": "Here's to new keys, new doors and new beginnings",
+    "body": "Cheers to your best year yet.",
+    "caption": "Happy New Year, {city}! 🎉 Here's to new beginnings, new doors and maybe a new address. Let's make this your year."
+  }
+];
+const HASHTAGS = "#realestate #realtor #{cityTag}realestate #{cityTag}realtor #homesforsale #justlisted #firsttimehomebuyer #househunting #realestateagent #dreamhome";
+
+const THEMES = [
+  ["#1f3a5f", "#c9a227", "#f6f1e9"], // navy & gold
+  ["#1d1d1f", "#d4af7a", "#f4f1ec"], // black & champagne
+  ["#2f4a3a", "#d8b48a", "#f3efe6"], // forest & sand
+  ["#7a3e3e", "#e2c2a2", "#f8f2ec"], // terracotta
+  ["#3b4a6b", "#e8a87c", "#f5f3f0"], // slate & peach
+  ["#0f5257", "#f2c14e", "#f2f7f5"], // teal & sun
+];
+
+// ---------- State ----------
+const ids = ["agentName","brokerage","phone","handle","city","license","c1","c2","c3","fontPair","address","price","openHouse","beds","baths","sqft","mMedian","mDays","mActive","mMonth","format"];
+const $ = id => document.getElementById(id);
+const imgs = { headshot: null, listing: null };
+try {
+  const saved = JSON.parse(localStorage.getItem("rps-settings") || "{}");
+  ids.forEach(k => { if (saved[k] != null && $(k)) $(k).value = saved[k]; });
+} catch (e) {}
+function S() { const o = {}; ids.forEach(k => o[k] = $(k).value); return o; }
+function save() { try { localStorage.setItem("rps-settings", JSON.stringify(S())); } catch (e) {} }
+function fill(t, s) {
+  return String(t || "")
+    .replaceAll("{name}", s.agentName).replaceAll("{city}", s.city).replaceAll("{address}", s.address)
+    .replaceAll("{price}", s.price).replaceAll("{beds}", s.beds).replaceAll("{baths}", s.baths).replaceAll("{sqft}", s.sqft)
+    .replaceAll("{openhouse}", s.openHouse).replaceAll("{phone}", s.phone).replaceAll("{month}", s.mMonth)
+    .replaceAll("{median}", s.mMedian).replaceAll("{days}", s.mDays).replaceAll("{active}", s.mActive);
+}
+function caption(p, s) {
+  const tag = s.city.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return fill(p.caption, s) + "\n\n" + HASHTAGS.replaceAll("{cityTag}", tag);
+}
+
+// ---------- Drawing helpers ----------
+const SIZES = { portrait: [1080, 1350], square: [1080, 1080], story: [1080, 1920] };
+function fonts(s) {
+  return s.fontPair === "serif"
+    ? { head: 'Georgia, "Times New Roman", "DejaVu Serif", serif', body: 'Inter, "Helvetica Neue", Arial, sans-serif' }
+    : { head: 'Inter, "Helvetica Neue", Arial, sans-serif', body: 'Inter, "Helvetica Neue", Arial, sans-serif' };
+}
+function wrap(ctx, text, maxW) {
+  const words = text.split(/\s+/); const lines = []; let line = "";
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+// Draws text that shrinks until it fits within maxLines; returns the bottom y.
+function textBlock(ctx, text, x, y, maxW, size, opts = {}) {
+  const { font, weight = "700", color = "#000", lh = 1.15, maxLines = 4, align = "left", minSize = 28 } = opts;
+  let lines;
+  for (;;) {
+    ctx.font = `${weight} ${size}px ${font}`;
+    lines = wrap(ctx, text, maxW);
+    if (lines.length <= maxLines || size <= minSize) break;
+    size -= 4;
+  }
+  ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = "top";
+  const ax = align === "center" ? x + maxW / 2 : x;
+  lines.forEach((l, i) => ctx.fillText(l, ax, y + i * size * lh));
+  ctx.textAlign = "left";
+  return y + lines.length * size * lh;
+}
+function cover(ctx, img, x, y, w, h) {
+  const r = Math.max(w / img.width, h / img.height);
+  const iw = img.width * r, ih = img.height * r;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); ctx.restore();
+}
+function placeholderPhoto(ctx, x, y, w, h, s) {
+  const g = ctx.createLinearGradient(x, y, x + w, y + h);
+  g.addColorStop(0, s.c1); g.addColorStop(1, shade(s.c1, 0.35));
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  // simple house line-art
+  ctx.save(); ctx.strokeStyle = hexA(s.c2, 0.85); ctx.lineWidth = 10; ctx.lineJoin = "round";
+  const cx = x + w / 2, cy = y + h / 2 + 20, u = Math.min(w, h) / 6;
+  ctx.beginPath(); ctx.moveTo(cx - u * 1.4, cy - u * 0.1); ctx.lineTo(cx, cy - u * 1.4); ctx.lineTo(cx + u * 1.4, cy - u * 0.1); ctx.stroke();
+  ctx.strokeRect(cx - u, cy - u * 0.3, u * 2, u * 1.5);
+  ctx.strokeRect(cx - u * 0.25, cy + u * 0.4, u * 0.5, u * 0.8);
+  ctx.restore();
+}
+function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16); const f = c => Math.max(0, Math.min(255, Math.round(c * (1 - amt))));
+  return "#" + [f(n >> 16), f((n >> 8) & 255), f(n & 255)].map(v => v.toString(16).padStart(2, "0")).join("");
+}
+function lum(hex) { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; }
+function onColor(hex) { return lum(hex) > 0.6 ? "#1d1d1f" : "#ffffff"; }
+
+function footer(ctx, W, H, s, F, dark) {
+  const fh = 130, y = H - fh;
+  ctx.fillStyle = dark ? s.c1 : "#ffffff"; ctx.fillRect(0, y, W, fh);
+  ctx.fillStyle = s.c2; ctx.fillRect(0, y, W, 8);
+  const ink = dark ? onColor(s.c1) : "#1d1d1f";
+  let x = 60;
+  if (imgs.headshot) {
+    ctx.save(); ctx.beginPath(); ctx.arc(x + 40, y + 69, 40, 0, Math.PI * 2); ctx.clip();
+    cover(ctx, imgs.headshot, x, y + 29, 80, 80); ctx.restore(); x += 104;
+  }
+  ctx.fillStyle = ink; ctx.textBaseline = "top";
+  ctx.font = `700 34px ${F.body}`; ctx.fillText(s.agentName, x, y + 30);
+  ctx.font = `400 24px ${F.body}`; ctx.globalAlpha = 0.8;
+  ctx.fillText([s.brokerage, s.license].filter(Boolean).join(" · "), x, y + 74); ctx.globalAlpha = 1;
+  ctx.textAlign = "right";
+  ctx.font = `700 28px ${F.body}`; ctx.fillText(s.phone, W - 60, y + 32);
+  ctx.font = `400 24px ${F.body}`; ctx.globalAlpha = 0.8; ctx.fillText(s.handle, W - 60, y + 74);
+  ctx.globalAlpha = 1; ctx.textAlign = "left";
+  return y;
+}
+function kicker(ctx, text, x, y, s, F, color) {
+  ctx.font = `700 26px ${F.body}`;
+  ctx.fillStyle = color || s.c2; ctx.textBaseline = "top";
+  ctx.letterSpacing = "4px"; ctx.fillText(text, x, y); ctx.letterSpacing = "0px";
+  return y + 48;
+}
+
+// ---------- Layouts ----------
+const LAYOUTS = {
+  photo(ctx, W, H, p, s, F) {
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+    const ph = Math.round(H * 0.56);
+    imgs.listing ? cover(ctx, imgs.listing, 0, 0, W, ph) : placeholderPhoto(ctx, 0, 0, W, ph, s);
+    // badge
+    ctx.font = `800 44px ${F.body}`; ctx.letterSpacing = "6px";
+    const bw = ctx.measureText(p.badge).width + 80;
+    ctx.fillStyle = s.c2; rrect(ctx, 60, ph - 50, bw, 100, 12); ctx.fill();
+    ctx.fillStyle = onColor(s.c2); ctx.textBaseline = "middle"; ctx.fillText(p.badge, 100, ph); ctx.letterSpacing = "0px";
+    const fy = footer(ctx, W, H, s, F, true);
+    const room = fy - (ph + 50);
+    let y = ph + 50 + Math.max(30, (room - 260) / 2);
+    y = textBlock(ctx, s.address, 60, y, W - 120, 64, { font: F.head, color: s.c1, maxLines: 2 });
+    ctx.font = `500 34px ${F.body}`; ctx.fillStyle = "#55555a"; ctx.textBaseline = "top";
+    const det = `${s.beds} Beds   •   ${s.baths} Baths   •   ${s.sqft} Sq Ft`;
+    ctx.fillText(p.badge === "OPEN HOUSE" ? `${s.openHouse}   •   ${s.beds} bd / ${s.baths} ba` : det, 60, y + 16);
+    if (p.badge !== "JUST SOLD" && p.badge !== "UNDER CONTRACT") {
+      ctx.font = `800 64px ${F.body}`; ctx.fillStyle = s.c1; ctx.fillText(s.price, 60, y + 76);
+    } else {
+      ctx.font = `700 44px ${F.head}`; ctx.fillStyle = s.c1; ctx.fillText(p.badge === "JUST SOLD" ? "Congratulations to my clients!" : "Another one, off the market.", 60, y + 82);
+    }
+  },
+  bold(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c1; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = hexA(s.c2, 0.5); ctx.lineWidth = 3; ctx.strokeRect(40, 40, W - 80, H - 210);
+    const fy = footer(ctx, W, H, s, F, false);
+    const ink = onColor(s.c1);
+    const top = (fy - 40) * 0.26;
+    let y = kicker(ctx, p.kicker, 100, top, s, F);
+    ctx.fillStyle = s.c2; ctx.fillRect(100, y, 90, 6); y += 50;
+    y = textBlock(ctx, fill(p.head, s), 100, y, W - 200, 104, { font: F.head, color: ink, maxLines: 4 });
+    textBlock(ctx, fill(p.body, s), 100, y + 40, W - 220, 40, { font: F.body, weight: "400", color: hexA(ink === "#ffffff" ? "#ffffff" : "#1d1d1f", 0.85), lh: 1.4, maxLines: 4 });
+  },
+  tip(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = s.c1; ctx.fillRect(0, 0, 24, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(90, (fy - 860) / 2);
+    y = kicker(ctx, p.kicker, 100, y, s, F, s.c1);
+    y = textBlock(ctx, fill(p.head, s), 100, y + 10, W - 200, 84, { font: F.head, color: s.c1, maxLines: 3 }) + 50;
+    p.list.forEach((item, i) => {
+      ctx.fillStyle = "#fff"; rrect(ctx, 100, y, W - 200, 130, 18); ctx.fill();
+      ctx.fillStyle = s.c2; ctx.beginPath(); ctx.arc(170, y + 65, 38, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = onColor(s.c2); ctx.font = `800 40px ${F.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(i + 1), 170, y + 67); ctx.textAlign = "left";
+      ctx.fillStyle = "#1d1d1f"; ctx.font = `600 38px ${F.body}`; ctx.fillText(item, 236, y + 67);
+      y += 154;
+    });
+    ctx.font = `600 26px ${F.body}`; ctx.fillStyle = s.c1; ctx.textBaseline = "top";
+    ctx.fillText("SAVE THIS FOR LATER  →", 100, y + 20);
+  },
+  stat(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(80, (fy - 900) / 2);
+    y = kicker(ctx, p.kicker, 80, y, s, F, s.c1);
+    y = textBlock(ctx, `${s.city} · ${s.mMonth}`, 80, y, W - 160, 72, { font: F.head, color: s.c1, maxLines: 2 }) + 40;
+    ctx.fillStyle = s.c1; rrect(ctx, 80, y, W - 160, 320, 24); ctx.fill();
+    ctx.fillStyle = hexA(onColor(s.c1), 0.75); ctx.font = `600 30px ${F.body}`; ctx.textBaseline = "top";
+    ctx.fillText("MEDIAN SALE PRICE", 130, y + 50);
+    ctx.fillStyle = s.c2; ctx.font = `800 150px ${F.body}`; ctx.fillText(s.mMedian, 124, y + 100);
+    y += 360;
+    const cw = (W - 160 - 30) / 2;
+    [["AVG DAYS ON MARKET", s.mDays], ["ACTIVE LISTINGS", s.mActive]].forEach(([l, v], i) => {
+      const x = 80 + i * (cw + 30);
+      ctx.fillStyle = "#fff"; rrect(ctx, x, y, cw, 220, 24); ctx.fill();
+      ctx.fillStyle = "#6b6b70"; ctx.font = `600 24px ${F.body}`; ctx.fillText(l, x + 40, y + 44);
+      ctx.fillStyle = s.c1; ctx.font = `800 88px ${F.body}`; ctx.fillText(v, x + 36, y + 90);
+    });
+    ctx.fillStyle = "#6b6b70"; ctx.font = `400 22px ${F.body}`;
+    ctx.fillText("Source: local MLS data. DM me for your neighborhood’s numbers.", 80, y + 250);
+  },
+  quote(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(90, (fy - 760) / 2);
+    ctx.fillStyle = s.c2; ctx.font = `700 260px Georgia, serif`; ctx.textBaseline = "top"; ctx.fillText("“", 80, y - 40);
+    y += 170;
+    y = textBlock(ctx, fill(p.quote, s), 100, y, W - 200, 62, { font: F.head, weight: "400", color: s.c1, lh: 1.3, maxLines: 6 }) + 40;
+    ctx.fillStyle = s.c2; ctx.font = `400 52px ${F.body}`; ctx.fillText("★★★★★", 100, y);
+    ctx.fillStyle = "#1d1d1f"; ctx.font = `700 34px ${F.body}`; ctx.fillText("— " + p.who, 100, y + 80);
+  },
+  myth(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c3; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, true);
+    let y = Math.max(70, (fy - 980) / 2);
+    y = textBlock(ctx, p.head, 80, y, W - 160, 92, { font: F.head, color: s.c1, maxLines: 1 }) + 40;
+    const box = (label, text, bg, ink, by) => {
+      ctx.fillStyle = bg; rrect(ctx, 80, by, W - 160, 380, 24); ctx.fill();
+      ctx.font = `800 30px ${F.body}`; ctx.fillStyle = ink === "#ffffff" ? s.c2 : s.c1; ctx.letterSpacing = "5px";
+      ctx.textBaseline = "top"; ctx.fillText(label, 130, by + 50); ctx.letterSpacing = "0px";
+      textBlock(ctx, fill(text, s), 130, by + 110, W - 260, 52, { font: F.head, weight: "600", color: ink, lh: 1.25, maxLines: 4 });
+    };
+    box("✕  MYTH", p.myth, "#ffffff", "#1d1d1f", y);
+    box("✓  FACT", p.fact, s.c1, onColor(s.c1), y + 410);
+  },
+  agent(ctx, W, H, p, s, F) {
+    ctx.fillStyle = s.c1; ctx.fillRect(0, 0, W, H);
+    const fy = footer(ctx, W, H, s, F, false);
+    const ink = onColor(s.c1);
+    let y = Math.max(80, (fy - 900) / 2);
+    const r = 170, cx = W / 2;
+    ctx.fillStyle = s.c2; ctx.beginPath(); ctx.arc(cx, y + r, r + 10, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, y + r, r, 0, Math.PI * 2); ctx.clip();
+    if (imgs.headshot) cover(ctx, imgs.headshot, cx - r, y, r * 2, r * 2);
+    else { ctx.fillStyle = shade(s.c1, -0.25); ctx.fillRect(cx - r, y, r * 2, r * 2);
+      ctx.fillStyle = hexA(ink, 0.9); ctx.font = `700 120px ${F.head}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(s.agentName.split(" ").map(w => w[0]).join("").slice(0, 2), cx, y + r + 6); ctx.textAlign = "left"; }
+    ctx.restore();
+    y += r * 2 + 60;
+    ctx.font = `700 26px ${F.body}`; ctx.fillStyle = s.c2; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.letterSpacing = "4px"; ctx.fillText(p.kicker, cx, y); ctx.letterSpacing = "0px"; ctx.textAlign = "left";
+    y = textBlock(ctx, fill(p.head, s), 90, y + 56, W - 180, 76, { font: F.head, color: ink, maxLines: 3, align: "center" });
+    textBlock(ctx, fill(p.body, s), 120, y + 30, W - 240, 36, { font: F.body, weight: "400", color: hexA(ink, 0.85), lh: 1.4, maxLines: 4, align: "center" });
+  }
+};
+
+function render(canvas, p, s) {
+  const [W, H] = SIZES[s.format];
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  LAYOUTS[p.layout](ctx, W, H, p, s, fonts(s));
+}
+
+// ---------- UI ----------
+const grid = $("grid"); const canvases = [];
+POSTS.forEach((p, i) => {
+  const card = document.createElement("div"); card.className = "card";
+  const c = document.createElement("canvas"); canvases.push(c);
+  card.innerHTML = `<div class="meta"><strong>Day ${p.day} · ${p.title}</strong><span>${p.layout === "photo" ? "Uses listing photo" : "Brand post"}</span></div>`;
+  card.prepend(c);
+  const actions = document.createElement("div"); actions.className = "actions";
+  const dl = document.createElement("button"); dl.className = "btn"; dl.textContent = "Download";
+  dl.onclick = () => download(c, p);
+  const cp = document.createElement("button"); cp.className = "btn ghost"; cp.textContent = "Caption";
+  cp.onclick = () => copyText(caption(p, S()));
+  actions.append(dl, cp); card.append(actions); grid.append(card);
+});
+function drawAll() { const s = S(); POSTS.forEach((p, i) => render(canvases[i], p, s)); save(); }
+function fileName(p) { return `day-${String(p.day).padStart(2, "0")}-${p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`; }
+function download(c, p) {
+  return new Promise(res => c.toBlob(b => {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = fileName(p); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); res(); }, 300);
+  }, "image/png"));
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast("Caption copied"); }
+  catch (e) { prompt("Copy your caption:", t); }
+}
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1600); }
+$("dlAll").onclick = async () => { for (let i = 0; i < POSTS.length; i++) await download(canvases[i], POSTS[i]); toast(`${POSTS.length} posts downloaded`); };
+$("dlAll").textContent = `Download all ${POSTS.length} (PNG)`;
+$("dlCaptions").onclick = () => {
+  const s = S();
+  const txt = POSTS.map(p => `DAY ${p.day} — ${p.title.toUpperCase()}\n${caption(p, s)}\n`).join("\n------------------------------\n\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" }));
+  a.download = `${document.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-captions.txt`; a.click();
+};
+THEMES.forEach(t => {
+  const b = document.createElement("button"); b.style.background = `linear-gradient(135deg, ${t[0]} 55%, ${t[1]} 55%)`;
+  b.title = "Apply theme"; b.onclick = () => { $("c1").value = t[0]; $("c2").value = t[1]; $("c3").value = t[2]; drawAll(); };
+  $("themes").append(b);
+});
+function loadImg(input, key) {
+  input.onchange = () => {
+    const f = input.files[0]; if (!f) return;
+    const img = new Image(); img.onload = () => { imgs[key] = img; drawAll(); }; img.src = URL.createObjectURL(f);
+  };
+}
+loadImg($("headshot"), "headshot"); loadImg($("listing"), "listing");
+ids.forEach(k => $(k).addEventListener("input", drawAll));
+document.fonts && document.fonts.ready ? document.fonts.ready.then(drawAll) : drawAll();
+drawAll();
+// Hooks for automated preview rendering
+window.__rps = { POSTS, canvases, drawAll, imgs, S, caption };
+</script>
+</body>
+</html>

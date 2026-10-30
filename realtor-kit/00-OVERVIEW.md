@@ -8,7 +8,8 @@
 - **Sizes:** Instagram/Facebook feed (1080×1350), square (1080×1080), Story/Reel/TikTok cover (1080×1920).
 - **Post types:** Just Listed, Open House, Under Contract, Just Sold, Price Improved, Coming Soon, Market Update, Buyer Tips, Seller Tips, Myth vs Fact, Testimonials, Meet the Agent, and engagement questions.
 - **Extras:** 6 color themes or fully custom colors, "download all 30" in one click, and the agent's settings are saved so they can reuse it for every new listing.
-- **Pricing:** $19 kit · $47 done-for-you (we enter their details and send the PNGs, about 10 minutes of work) · later a $9/month subscription for 30 new posts each month.
+- **Product line:** $19 30-Day kit · $12 Holiday & Year-End Pack · $27 Complete Bundle · $47 done-for-you (automated with `tools/fulfill.js`; see `marketing/ADD-ONS.md`)
+- **Original pricing note:** $19 kit · $47 done-for-you (we enter their details and send the PNGs, about 10 minutes of work) · later a $9/month subscription for 30 new posts each month.
 - **Why it can win:** realtor templates are proven sellers on Etsy, but nearly all of them are Canva templates that look alike. Ours brands itself, so we can DM an agent a **free sample post with their own name on it**. Template shops can't do that.
 - **Marketer:** the owner's wife is the face of the brand: short videos plus personal DMs to agents.
 - **Budget:** about $0–40/month.

@@ -6,6 +6,7 @@ const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const outDir = path.resolve(process.argv[2] || path.join(root, "marketing", "samples"));
+const studio = process.env.STUDIO || "realtor-post-studio.html";
 const theme = Number(process.argv[3] || 0);
 const format = process.argv[4] || "portrait";
 
@@ -16,7 +17,7 @@ const format = process.argv[4] || "portrait";
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   page.on("console", m => m.type() === "error" && errors.push(m.text()));
-  await page.goto("file://" + path.join(root, "product", "realtor-post-studio.html"));
+  await page.goto("file://" + path.join(root, "product", studio));
   await page.evaluate(([t, f]) => {
     document.querySelectorAll("#themes button")[t].click();
     document.getElementById("format").value = f;
